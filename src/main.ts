@@ -1,60 +1,68 @@
 import './style.css'
-import typescriptLogo from './assets/typescript.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import { setupCounter } from './counter.ts'
+import { getMapDefinition } from './content/maps/index.ts'
+import { createFixedStepLoop } from './engine/loop.ts'
+import { loadAssets } from './engine/assets.ts'
+import { createInput } from './engine/input.ts'
+import { createRenderer } from './engine/renderer.ts'
+import { updateCombat } from './ecs/systems/combat.ts'
+import { updateMovement } from './ecs/systems/movement.ts'
+import { createWorld, refreshHud } from './ecs/world.ts'
+import { loadMap } from './game/map-loader.ts'
+import { initializePlayer, updatePlayer } from './game/player.ts'
+import { createHud } from './ui/hud.ts'
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${typescriptLogo}" class="framework" alt="TypeScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.ts</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+async function bootstrap() {
+  const app = document.querySelector<HTMLDivElement>('#app')
+  if (!app) {
+    throw new Error('App root not found')
+  }
 
-<div class="ticks"></div>
+  app.innerHTML = `
+    <div class="game-shell">
+      <div class="game-stage">
+        <div class="game-loading" data-loading>Loading Phase 1...</div>
+      </div>
+    </div>
+  `
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://www.typescriptlang.org" target="_blank">
-          <img class="button-icon" src="${typescriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
+  const stage = app.querySelector<HTMLElement>('.game-stage')
+  const loading = app.querySelector<HTMLElement>('[data-loading]')
 
-<div class="ticks"></div>
-<section id="spacer"></section>
-`
+  if (!stage || !loading) {
+    throw new Error('Game shell failed to mount')
+  }
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+  const world = createWorld()
+  const input = createInput()
+  const renderer = createRenderer(stage)
+  const hud = createHud(stage)
+  const assets = await loadAssets()
+  const map = getMapDefinition('forest-valley')
+
+  initializePlayer(world, renderer.scene, assets, map.playerSpawn)
+  loadMap(world, renderer, assets, map)
+  refreshHud(world)
+  hud.update(world)
+  loading.remove()
+
+  createFixedStepLoop(
+    (deltaSeconds) => {
+      updatePlayer(world, input.getState(), deltaSeconds)
+      updateMovement(world, deltaSeconds)
+      updateCombat(world)
+      hud.update(world)
+    },
+    (_alpha, elapsedSeconds) => {
+      renderer.syncWorld(world, elapsedSeconds)
+      renderer.renderFrame()
+    },
+  )
+}
+
+bootstrap().catch((error: unknown) => {
+  const app = document.querySelector<HTMLDivElement>('#app')
+  if (app) {
+    app.innerHTML = `<div class="game-error">Failed to boot the game: ${error instanceof Error ? error.message : 'Unknown error'}</div>`
+  }
+  console.error(error)
+})
