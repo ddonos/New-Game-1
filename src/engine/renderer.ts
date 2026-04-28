@@ -127,17 +127,48 @@ function createBulletView(owner: 'player' | 'enemy') {
     return root
   }
 
-  const mesh = new Mesh(
-    new SphereGeometry(0.45, 10, 10),
+  const root = new Group()
+  const jacket = new Mesh(
+    new CylinderGeometry(0.16, 0.18, 1.45, 10),
     new MeshStandardMaterial({
-      color: 0xffe082,
-      emissive: 0xffa000,
-      emissiveIntensity: 1.2,
+      color: 0xd0a852,
+      roughness: 0.34,
+      metalness: 0.52,
+      emissive: 0x3b2500,
+      emissiveIntensity: 0.2,
     }),
   )
-  mesh.castShadow = false
-  mesh.receiveShadow = false
-  return mesh
+  jacket.rotation.x = Math.PI / 2
+  root.add(jacket)
+
+  const tip = new Mesh(
+    new ConeGeometry(0.18, 0.46, 10),
+    new MeshStandardMaterial({
+      color: 0xf0d184,
+      roughness: 0.28,
+      metalness: 0.48,
+      emissive: 0xffaa22,
+      emissiveIntensity: 0.35,
+    }),
+  )
+  tip.position.z = 0.95
+  tip.rotation.x = Math.PI / 2
+  root.add(tip)
+
+  const tracer = new Mesh(
+    new CylinderGeometry(0.08, 0.16, 0.68, 8),
+    new MeshStandardMaterial({
+      color: 0xff8a2a,
+      transparent: true,
+      opacity: 0.72,
+      emissive: 0xff5a00,
+      emissiveIntensity: 1.1,
+    }),
+  )
+  tracer.position.z = -0.95
+  tracer.rotation.x = Math.PI / 2
+  root.add(tracer)
+  return root
 }
 
 function createEffectView(effect: EffectState) {
@@ -198,9 +229,10 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
   const shadowLight = new DirectionalLight(0xffffff, 1.3)
   shadowLight.position.set(90, 150, 60)
   shadowLight.castShadow = true
-  shadowLight.shadow.mapSize.width = 1024
-  shadowLight.shadow.mapSize.height = 1024
+  shadowLight.shadow.mapSize.width = 2048
+  shadowLight.shadow.mapSize.height = 2048
   shadowLight.shadow.bias = -0.0003
+  shadowLight.shadow.normalBias = 0.03
   scene.add(shadowLight)
   scene.add(shadowLight.target)
 
@@ -259,14 +291,19 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
       material.needsUpdate = true
     },
     updateShadowBounds(width, height) {
-      const halfSpan = Math.max(width, height) * 0.55
+      const mapSpan = Math.max(width, height)
+      const halfSpan = mapSpan * 0.76
       shadowLight.shadow.camera.left = -halfSpan
       shadowLight.shadow.camera.right = halfSpan
       shadowLight.shadow.camera.top = halfSpan
       shadowLight.shadow.camera.bottom = -halfSpan
-      shadowLight.shadow.camera.near = 10
-      shadowLight.shadow.camera.far = 320
+      shadowLight.shadow.camera.near = 0.5
+      shadowLight.shadow.camera.far = mapSpan * 2.8
       shadowLight.shadow.camera.updateProjectionMatrix()
+      shadowLight.target.position.set(0, 0, 0)
+      shadowLight.target.updateMatrixWorld()
+      shadowLight.updateMatrixWorld()
+      shadowLight.shadow.camera.updateMatrixWorld()
     },
     syncWorld(world, _elapsedSeconds) {
       const playerView = world.views.player

@@ -173,12 +173,12 @@ function createHelipad(radius: number) {
   inner.receiveShadow = true
   root.add(inner)
 
-  addBox(root, [radius * 1.15, 0.12, 1.7], 0xf2f4dc, [0, 0.32, 0], 0, 0.88)
-  addBox(root, [1.7, 0.12, radius * 1.15], 0xf2f4dc, [0, 0.33, 0], 0, 0.88)
-  addBox(root, [radius * 2.1, 0.1, 1.05], 0xd4d9b8, [0, 0.3, radius * 0.92], 0, 0.9)
-  addBox(root, [radius * 2.1, 0.1, 1.05], 0xd4d9b8, [0, 0.3, -radius * 0.92], 0, 0.9)
-  addBox(root, [1.05, 0.1, radius * 2.1], 0xd4d9b8, [radius * 0.92, 0.31, 0], 0, 0.9)
-  addBox(root, [1.05, 0.1, radius * 2.1], 0xd4d9b8, [-radius * 0.92, 0.31, 0], 0, 0.9)
+  const hColor = 0xf2f4dc
+  const markHeight = 0.1
+  const markY = 0.34
+  addBox(root, [1.5, markHeight, radius * 1.18], hColor, [-radius * 0.34, markY, 0], 0, 0.88)
+  addBox(root, [1.5, markHeight, radius * 1.18], hColor, [radius * 0.34, markY, 0], 0, 0.88)
+  addBox(root, [radius * 0.68, markHeight, 1.5], hColor, [0, markY + 0.01, 0], 0, 0.88)
   return root
 }
 
@@ -434,18 +434,21 @@ export class Spawner {
     for (let index = 0; index < aircraftOffsets.length; index += 1) {
       const offset = aircraftOffsets[index]!
       const position = offsetPoint(center, rotation, offset.forward, offset.right)
-      const prop = spawnProp(this.world, {
-        kind: 'parked-aircraft',
-        variant: 'parked-attack-aircraft',
+      const yaw = rotation + (pseudoRandom(seed + index) - 0.5) * 0.28
+      const aircraft = spawnBase(this.world, {
         position,
-        rotation: rotation + (pseudoRandom(seed + index) - 0.5) * 0.28,
-        scale: 1,
+        variant: 'parked-attack-aircraft',
+        health: 70,
+        maxHealth: 70,
+        radius: 10,
+        scoreValue: 220,
+        alive: true,
       })
       const root = createParkedAircraft()
       root.position.set(position.x, 0, position.y)
-      root.rotation.y = prop.rotation
+      root.rotation.y = yaw
       this.scene.add(root)
-      this.world.views.props.set(prop.id, { root })
+      this.world.views.bases.set(aircraft.id, { root })
       addClearZone(this.world, position, 8)
     }
 

@@ -6,8 +6,11 @@
   --ui-panel: rgba(14, 20, 17, 0.88);
   --ui-line: rgba(222, 218, 181, 0.18);
   --ui-accent: #d7b65a;
+  --ui-military: #26352d;
+  --ui-military-dark: #0a100d;
+  --ui-metal: #8f9785;
   --ui-danger: #c96a42;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Bahnschrift', 'Agency FB', 'Arial Narrow', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -166,18 +169,53 @@ select {
 }
 
 .menu__content {
+  position: relative;
+  overflow: hidden;
   grid-column: 2;
   justify-self: end;
   margin-top: -78px;
   width: min(690px, 100%);
   min-height: 452px;
   padding: 26px;
-  border: 1px solid rgba(244, 241, 223, 0.16);
+  border: 1px solid rgba(143, 151, 133, 0.38);
   border-radius: 8px;
-  background: rgba(8, 12, 10, 0.68);
+  background:
+    linear-gradient(135deg, rgba(143, 151, 133, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(16, 25, 20, 0.86), rgba(5, 9, 7, 0.88));
   color: var(--ui-ink);
   backdrop-filter: blur(8px);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(244, 241, 223, 0.08),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.42),
+    0 24px 70px rgba(0, 0, 0, 0.36);
+}
+
+.menu__content::before,
+.pause-menu__panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, transparent 0%, rgba(244, 241, 223, 0.07) 46%, transparent 58%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 5px);
+  mix-blend-mode: screen;
+  opacity: 0.42;
+}
+
+.menu__content::after,
+.pause-menu__panel::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  pointer-events: none;
+  border: 1px solid rgba(215, 182, 90, 0.12);
+  clip-path: polygon(
+    0 0, 34px 0, 34px 1px, 1px 1px, 1px 34px, 0 34px,
+    0 100%, 34px 100%, 34px calc(100% - 1px), 1px calc(100% - 1px), 1px calc(100% - 34px), 0 calc(100% - 34px),
+    100% 100%, calc(100% - 34px) 100%, calc(100% - 34px) calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) calc(100% - 34px), 100% calc(100% - 34px),
+    100% 0, calc(100% - 34px) 0, calc(100% - 34px) 1px, calc(100% - 1px) 1px, calc(100% - 1px) 34px, 100% 34px
+  );
 }
 
 .menu__panel::before {
@@ -226,6 +264,10 @@ select {
 .menu h2 {
   font-size: clamp(34px, 3.4vw, 52px);
   line-height: 1;
+  color: #f2efdf;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .menu p {
@@ -244,11 +286,44 @@ select {
 
 .menu-button,
 .menu-icon-button {
-  border: 1px solid rgba(244, 241, 223, 0.2);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(143, 151, 133, 0.5);
   border-radius: 6px;
-  background: linear-gradient(180deg, rgba(45, 59, 51, 0.92), rgba(24, 33, 29, 0.92));
+  background:
+    linear-gradient(90deg, rgba(215, 182, 90, 0.12), transparent 16%),
+    linear-gradient(180deg, rgba(43, 58, 49, 0.96), rgba(12, 19, 15, 0.96));
   color: var(--ui-ink);
   cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(244, 241, 223, 0.09),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+    0 8px 18px rgba(0, 0, 0, 0.24);
+}
+
+.menu-button::before,
+.menu-icon-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(244, 241, 223, 0.16), transparent 28%),
+    repeating-linear-gradient(135deg, transparent 0 10px, rgba(255, 255, 255, 0.035) 10px 11px);
+  opacity: 0.34;
+}
+
+.menu-button::after,
+.menu-icon-button::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 7px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(215, 182, 90, 0.48), transparent);
+  opacity: 0.55;
 }
 
 .menu-button {
@@ -258,19 +333,28 @@ select {
   font-weight: 800;
   text-align: left;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
 }
 
 .menu-button:hover,
 .menu-icon-button:hover,
 .menu-world:not(:disabled):hover {
   border-color: rgba(215, 182, 90, 0.7);
-  box-shadow: inset 0 3px 0 var(--ui-accent), 0 12px 30px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    inset 0 3px 0 var(--ui-accent),
+    inset 0 0 0 1px rgba(244, 241, 223, 0.08),
+    0 0 18px rgba(215, 182, 90, 0.18),
+    0 12px 30px rgba(0, 0, 0, 0.28);
 }
 
 .menu-button--primary {
-  background: linear-gradient(180deg, #d7b65a, #9b7631);
+  border-color: rgba(236, 204, 112, 0.78);
+  background:
+    linear-gradient(90deg, rgba(255, 244, 177, 0.24), transparent 24%),
+    linear-gradient(180deg, #d7b65a, #8f6929);
   color: #141711;
+  text-shadow: none;
 }
 
 .pause-menu {
@@ -286,14 +370,21 @@ select {
 }
 
 .pause-menu__panel {
+  position: relative;
+  overflow: hidden;
   width: min(420px, 100%);
   padding: 24px;
-  border: 1px solid var(--ui-line);
+  border: 1px solid rgba(143, 151, 133, 0.42);
   border-radius: 8px;
-  background: rgba(14, 20, 17, 0.94);
+  background:
+    linear-gradient(135deg, rgba(143, 151, 133, 0.08), transparent 36%),
+    linear-gradient(180deg, rgba(16, 25, 20, 0.96), rgba(5, 9, 7, 0.96));
   color: var(--ui-ink);
   text-align: center;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(244, 241, 223, 0.08),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.42),
+    0 24px 70px rgba(0, 0, 0, 0.46);
 }
 
 .pause-menu__eyebrow {
@@ -308,6 +399,10 @@ select {
   margin: 6px 0 0;
   font-size: 34px;
   line-height: 1;
+  color: #f2efdf;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .pause-menu__stats {
@@ -320,8 +415,9 @@ select {
 .pause-menu__stats div {
   min-width: 0;
   padding: 10px;
-  border: 1px solid rgba(244, 241, 223, 0.12);
-  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(143, 151, 133, 0.28);
+  background:
+    linear-gradient(180deg, rgba(38, 53, 45, 0.48), rgba(0, 0, 0, 0.26));
 }
 
 .pause-menu__stats span {
@@ -336,6 +432,7 @@ select {
   display: block;
   margin-top: 4px;
   font-size: 22px;
+  color: var(--ui-accent);
 }
 
 .pause-menu__actions {
@@ -378,17 +475,39 @@ select {
 }
 
 .menu-world {
+  position: relative;
   display: grid;
   grid-template-rows: 168px 1fr;
   min-width: 0;
   padding: 0;
   overflow: hidden;
-  border: 1px solid rgba(244, 241, 223, 0.16);
+  border: 1px solid rgba(143, 151, 133, 0.32);
   border-radius: 8px;
-  background: rgba(8, 12, 10, 0.78);
+  background:
+    linear-gradient(180deg, rgba(24, 34, 28, 0.9), rgba(4, 8, 6, 0.94));
   color: var(--ui-ink);
   text-align: left;
   cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(244, 241, 223, 0.07),
+    0 10px 22px rgba(0, 0, 0, 0.24);
+}
+
+.menu-world::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 0%, transparent 58%, rgba(0, 0, 0, 0.68) 100%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 5px);
+  opacity: 0.5;
+}
+
+.menu-world:not(:disabled):hover::before {
+  background:
+    linear-gradient(180deg, rgba(215, 182, 90, 0.1), transparent 52%, rgba(0, 0, 0, 0.66) 100%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 5px);
 }
 
 .menu-world:disabled {
@@ -401,6 +520,7 @@ select {
   min-height: 0;
   background-position: center;
   background-size: cover;
+  border-bottom: 1px solid rgba(143, 151, 133, 0.28);
 }
 
 .menu-world--forest-valley .menu-world__image {
@@ -427,6 +547,10 @@ select {
 
 .menu-world strong {
   font-size: 22px;
+  color: #f2efdf;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.78);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .menu-world__content > span:not(.menu-world__meta):not(.menu-world__status) {
@@ -458,8 +582,10 @@ select {
   align-items: center;
   gap: 12px;
   padding: 14px;
-  border: 1px solid rgba(244, 241, 223, 0.13);
-  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(143, 151, 133, 0.28);
+  background:
+    linear-gradient(90deg, rgba(215, 182, 90, 0.1), transparent 20%),
+    linear-gradient(180deg, rgba(38, 53, 45, 0.48), rgba(0, 0, 0, 0.26));
 }
 
 .menu-ranks span {
@@ -483,7 +609,9 @@ select {
   max-width: none;
   padding: 12px 14px;
   border-left: 3px solid var(--ui-accent);
-  background: rgba(0, 0, 0, 0.18);
+  background:
+    linear-gradient(90deg, rgba(215, 182, 90, 0.1), transparent 22%),
+    linear-gradient(180deg, rgba(38, 53, 45, 0.48), rgba(0, 0, 0, 0.26));
   text-align: left;
 }
 

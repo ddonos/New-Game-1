@@ -197,19 +197,25 @@ export function updateCombat(world: World, deltaSeconds: number) {
 
       if (dx * dx + dy * dy <= hitRadius * hitRadius || sweep.hit) {
         const isLauncher = base.attackRange !== undefined
+        const isAircraft = base.variant === 'parked-attack-aircraft'
         base.health -= bullet.damage
         spawnImpactBurst(
           world,
           isLauncher ? { ...base.position } : sweep.hit ? sweep.point : { ...bullet.position },
-          isLauncher ? 3.2 : 2.2,
-          isLauncher ? 2.2 : 1.4,
+          isLauncher ? 0.9 : isAircraft ? 1.2 : 1.6,
+          isLauncher ? 2 : isAircraft ? 2.2 : 1.4,
         )
         spentBullets.add(bullet.id)
 
         if (base.health <= 0) {
           base.alive = false
           world.score += base.scoreValue
-          spawnDestructionBurst(world, { ...base.position }, 3.5, base.attackRange === undefined ? 3 : 4)
+          spawnDestructionBurst(
+            world,
+            { ...base.position },
+            isLauncher ? 1.1 : isAircraft ? 1.4 : 2.4,
+            isLauncher ? 4 : isAircraft ? 4.2 : 3,
+          )
         }
 
         break
