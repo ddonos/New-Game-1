@@ -1,7 +1,10 @@
 import {
   AmbientLight,
   Color,
+  ConeGeometry,
+  CylinderGeometry,
   DirectionalLight,
+  Group,
   Mesh,
   MeshStandardMaterial,
   OrthographicCamera,
@@ -9,12 +12,14 @@ import {
   PlaneGeometry,
   Scene,
   SphereGeometry,
+  type Object3D,
   Vector3,
   WebGLRenderer,
   type MeshStandardMaterialParameters,
   type Texture,
 } from 'three'
 import type { World } from '../ecs/world.ts'
+import type { EffectState } from '../game/types.ts'
 
 export interface RendererContext {
   scene: Scene
@@ -30,17 +35,151 @@ export interface RendererContext {
   dispose: () => void
 }
 
-const CAMERA_HEIGHT = 82
-const CAMERA_FORWARD_OFFSET = 62
-const CAMERA_SIDE_OFFSET = -18
+const CAMERA_HEIGHT = 88
+const CAMERA_FORWARD_OFFSET = 32
+const CAMERA_SIDE_OFFSET = -12
 const DEFAULT_MAP_SIZE = 320
-const OVERVIEW_PADDING = 96
+const PLAY_FRUSTUM_HEIGHT = 96
 const GROUND_VISUAL_PADDING = 180
+const CAMERA_FOLLOW_SPEED = 0.14
+
+function clamp(value: number, min: number, max: number) {
+  if (min > max) {
+    return (min + max) / 2
+  }
+  return Math.max(min, Math.min(max, value))
+}
+
+function disposeObject(root: Object3D) {
+  root.traverse((child) => {
+    if (child instanceof Mesh) {
+      child.geometry.dispose()
+      const materials = Array.isArray(child.material) ? child.material : [child.material]
+      for (const material of materials) {
+        material.dispose()
+      }
+    }
+  })
+}
+
+function createBulletView(owner: 'player' | 'enemy') {
+  if (owner === 'enemy') {
+    const root = new Group()
+    const body = new Mesh(
+      new CylinderGeometry(0.42, 0.42, 3.1, 14),
+      new MeshStandardMaterial({
+        color: 0xb5b8aa,
+        roughness: 0.48,
+        metalness: 0.25,
+      }),
+    )
+    body.rotation.x = Math.PI / 2
+    body.castShadow = true
+    root.add(body)
+
+    const nose = new Mesh(
+      new ConeGeometry(0.5, 1.2, 14),
+      new MeshStandardMaterial({
+        color: 0xe15b36,
+        roughness: 0.42,
+        metalness: 0.18,
+        emissive: 0x4a0900,
+        emissiveIntensity: 0.25,
+      }),
+    )
+    nose.position.z = 2.1
+    nose.rotation.x = Math.PI / 2
+    nose.castShadow = true
+    root.add(nose)
+
+    const tail = new Mesh(
+      new CylinderGeometry(0.5, 0.5, 0.22, 12),
+      new MeshStandardMaterial({ color: 0x242a27, roughness: 0.6, metalness: 0.22 }),
+    )
+    tail.position.z = -1.68
+    tail.rotation.x = Math.PI / 2
+    root.add(tail)
+
+    for (let index = 0; index < 4; index += 1) {
+      const fin = new Mesh(
+        new ConeGeometry(0.28, 0.9, 3),
+        new MeshStandardMaterial({ color: 0x59635b, roughness: 0.56, metalness: 0.18 }),
+      )
+      fin.position.z = -1.35
+      fin.rotation.z = (index / 4) * Math.PI * 2
+      fin.scale.set(0.55, 0.8, 0.3)
+      root.add(fin)
+    }
+
+    const flame = new Mesh(
+      new ConeGeometry(0.24, 0.85, 10),
+      new MeshStandardMaterial({
+        color: 0xffb347,
+        transparent: true,
+        opacity: 0.72,
+        emissive: 0xff4a00,
+        emissiveIntensity: 1.7,
+      }),
+    )
+    flame.position.z = -2.15
+    flame.rotation.x = -Math.PI / 2
+    root.add(flame)
+    return root
+  }
+
+  const mesh = new Mesh(
+    new SphereGeometry(0.45, 10, 10),
+    new MeshStandardMaterial({
+      color: 0xffe082,
+      emissive: 0xffa000,
+      emissiveIntensity: 1.2,
+    }),
+  )
+  mesh.castShadow = false
+  mesh.receiveShadow = false
+  return mesh
+}
+
+function createEffectView(effect: EffectState) {
+  const color = effect.color ?? (effect.kind === 'explosion' ? 0xff7b2f : 0x899187)
+  const emissive = effect.emissive ?? (effect.kind === 'explosion' ? 0xff3b00 : 0x000000)
+  const emissiveIntensity = effect.emissiveIntensity ?? (effect.kind === 'explosion' ? 1.35 : 0)
+  const mesh = new Mesh(
+    new SphereGeometry(1, effect.kind === 'explosion' ? 8 : 6, effect.kind === 'explosion' ? 6 : 4),
+    new MeshStandardMaterial({
+      color,
+      transparent: true,
+      opacity: effect.opacity ?? (effect.kind === 'explosion' ? 0.82 : 0.38),
+      roughness: 1,
+      metalness: 0,
+      emissive,
+      emissiveIntensity,
+      depthWrite: false,
+    }),
+  )
+  mesh.castShadow = false
+  mesh.receiveShadow = false
+  return mesh
+}
+
+function setEffectOpacity(root: Object3D, opacity: number, emissiveIntensity: number) {
+  if (!(root instanceof Mesh)) {
+    return
+  }
+
+  const material = root.material as MeshStandardMaterial
+  material.opacity = opacity
+  material.emissiveIntensity = emissiveIntensity
+}
 
 export function createRenderer(viewport: HTMLElement): RendererContext {
   const scene = new Scene()
   scene.background = new Color(0xcfe8ff)
-  let overviewSize = DEFAULT_MAP_SIZE + OVERVIEW_PADDING
+  let mapSize = {
+    width: DEFAULT_MAP_SIZE,
+    height: DEFAULT_MAP_SIZE,
+  }
+  let viewportAspect = 1
 
   const camera = new OrthographicCamera(-50, 50, 50, -50, 0.1, 500)
   camera.position.set(CAMERA_SIDE_OFFSET, CAMERA_HEIGHT, CAMERA_FORWARD_OFFSET)
@@ -59,8 +198,8 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
   const shadowLight = new DirectionalLight(0xffffff, 1.3)
   shadowLight.position.set(90, 150, 60)
   shadowLight.castShadow = true
-  shadowLight.shadow.mapSize.width = 2048
-  shadowLight.shadow.mapSize.height = 2048
+  shadowLight.shadow.mapSize.width = 1024
+  shadowLight.shadow.mapSize.height = 1024
   shadowLight.shadow.bias = -0.0003
   scene.add(shadowLight)
   scene.add(shadowLight.target)
@@ -82,10 +221,10 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
     const width = viewport.clientWidth
     const height = viewport.clientHeight
     renderer.setSize(width, height)
-    const aspect = width / Math.max(height, 1)
-    const frustumHeight = Math.max(overviewSize, overviewSize / aspect)
-    camera.left = (-frustumHeight * aspect) / 2
-    camera.right = (frustumHeight * aspect) / 2
+    viewportAspect = width / Math.max(height, 1)
+    const frustumHeight = PLAY_FRUSTUM_HEIGHT
+    camera.left = (-frustumHeight * viewportAspect) / 2
+    camera.right = (frustumHeight * viewportAspect) / 2
     camera.top = frustumHeight / 2
     camera.bottom = -frustumHeight / 2
     camera.updateProjectionMatrix()
@@ -102,7 +241,7 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
     shadowLight,
     viewport,
     setGround(size, texture) {
-      overviewSize = Math.max(size.width, size.height) + OVERVIEW_PADDING
+      mapSize = { ...size }
       resize()
       const visualWidth = size.width + GROUND_VISUAL_PADDING
       const visualHeight = size.height + GROUND_VISUAL_PADDING
@@ -133,6 +272,7 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
       const playerView = world.views.player
       if (playerView) {
         const bobOffset = Math.sin(world.player.bobPhase) * 0.1
+        playerView.root.visible = !world.player.destroyed
         playerView.root.position.set(
           world.player.position.x,
           world.player.hoverHeight + bobOffset,
@@ -164,37 +304,67 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
 
         view.root.visible = base.alive
         view.root.position.set(base.position.x, 0, base.position.y)
+        if (base.attackRange !== undefined) {
+          const dx = world.player.position.x - base.position.x
+          const dz = world.player.position.y - base.position.y
+          view.root.rotation.y = Math.atan2(dx, dz)
+        }
       }
 
       for (const bullet of world.bullets) {
         let view = world.views.bullets.get(bullet.id)
 
         if (!view) {
-          const mesh = new Mesh(
-            new SphereGeometry(0.45, 10, 10),
-            new MeshStandardMaterial({
-              color: 0xffe082,
-              emissive: 0xffa000,
-              emissiveIntensity: 1.2,
-            }),
-          )
-          mesh.castShadow = false
-          mesh.receiveShadow = false
-          scene.add(mesh)
-          view = { mesh }
+          const root = createBulletView(bullet.owner)
+          scene.add(root)
+          view = { root }
           world.views.bullets.set(bullet.id, view)
         }
 
-        view.mesh.position.set(bullet.position.x, bullet.altitude, bullet.position.y)
+        view.root.position.set(bullet.position.x, bullet.altitude, bullet.position.y)
+        view.root.rotation.y = Math.atan2(bullet.velocity.x, bullet.velocity.y)
+      }
+
+      for (const effect of world.effects) {
+        let view = world.views.effects.get(effect.id)
+
+        if (!view) {
+          const root = createEffectView(effect)
+          scene.add(root)
+          view = { root }
+          world.views.effects.set(effect.id, view)
+        }
+
+        const progress = effect.age / Math.max(effect.lifetime, 0.001)
+        const baseOpacity = effect.opacity ?? (effect.kind === 'explosion' ? 0.82 : 0.38)
+        const emissiveIntensity = effect.emissiveIntensity ?? (effect.kind === 'explosion' ? 1.35 : 0)
+        const growth = effect.kind === 'explosion' ? 0.72 + progress * 2.15 : 0.65 + progress * 1.55
+        const rise = effect.verticalRise ?? (effect.kind === 'explosion' ? 1.6 : 2.2)
+        view.root.position.set(effect.position.x, effect.altitude + progress * rise, effect.position.y)
+        view.root.scale.setScalar(effect.scale * growth)
+        view.root.rotation.y += 0.04
+        setEffectOpacity(
+          view.root,
+          Math.max(0, baseOpacity * (1 - progress)),
+          Math.max(0, emissiveIntensity * (1 - progress)),
+        )
       }
 
       for (const [id, view] of world.views.bullets) {
         const stillExists = world.bullets.some((bullet) => bullet.id === id)
         if (!stillExists) {
-          scene.remove(view.mesh)
-          view.mesh.geometry.dispose()
-          ;(view.mesh.material as MeshStandardMaterial).dispose()
+          scene.remove(view.root)
+          disposeObject(view.root)
           world.views.bullets.delete(id)
+        }
+      }
+
+      for (const [id, view] of world.views.effects) {
+        const stillExists = world.effects.some((effect) => effect.id === id)
+        if (!stillExists) {
+          scene.remove(view.root)
+          disposeObject(view.root)
+          world.views.effects.delete(id)
         }
       }
 
@@ -206,9 +376,28 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
         }
       }
 
-      const desiredPosition = new Vector3(CAMERA_SIDE_OFFSET, CAMERA_HEIGHT, CAMERA_FORWARD_OFFSET)
-      camera.position.lerp(desiredPosition, 0.1)
-      camera.lookAt(0, 0, 0)
+      const visibleHalfWidth = (PLAY_FRUSTUM_HEIGHT * viewportAspect) / 2
+      const visibleHalfHeight = PLAY_FRUSTUM_HEIGHT / 2
+      const mapHalfWidth = mapSize.width / 2
+      const mapHalfHeight = mapSize.height / 2
+      const targetX = clamp(
+        world.cameraTarget.x,
+        -mapHalfWidth + visibleHalfWidth,
+        mapHalfWidth - visibleHalfWidth,
+      )
+      const targetZ = clamp(
+        world.cameraTarget.y,
+        -mapHalfHeight + visibleHalfHeight,
+        mapHalfHeight - visibleHalfHeight,
+      )
+      const lookTarget = new Vector3(targetX, world.player.hoverHeight * 0.35, targetZ)
+      const desiredPosition = new Vector3(
+        targetX + CAMERA_SIDE_OFFSET,
+        CAMERA_HEIGHT,
+        targetZ + CAMERA_FORWARD_OFFSET,
+      )
+      camera.position.lerp(desiredPosition, CAMERA_FOLLOW_SPEED)
+      camera.lookAt(lookTarget)
     },
     renderFrame() {
       renderer.render(scene, camera)

@@ -7,6 +7,7 @@ import {
 import type { GameAssets } from '../engine/assets.ts'
 import type { InputState } from '../engine/input.ts'
 import {
+  queueAudio,
   spawnBullet,
   type PlayerView,
   type World,
@@ -62,7 +63,12 @@ export function initializePlayer(
   spawn: PlayerSpawn,
 ) {
   world.player.position = { ...spawn.position }
+  world.player.spawnPosition = { ...spawn.position }
+  world.player.spawnFacing = spawn.facing
   world.player.facing = spawn.facing
+  world.player.hoverHeight = 4
+  world.player.targetHoverHeight = 4
+  world.player.takeoffStarted = false
   world.cameraTarget = { ...spawn.position }
 
   const root = new Group()
@@ -100,6 +106,56 @@ export function initializePlayer(
 export function updatePlayer(world: World, input: InputState, deltaSeconds: number) {
   const player = world.player
 
+  if (player.destroyed) {
+    player.respawnTimer = Math.max(0, player.respawnTimer - deltaSeconds)
+    player.velocity.x = 0
+    player.velocity.y = 0
+    player.angularVelocity = 0
+    player.forwardSpeed = 0
+    player.fireCooldown = Math.max(0, player.fireCooldown - deltaSeconds)
+    player.mainRotorAngle += deltaSeconds * 12
+    player.tailRotorAngle += deltaSeconds * 16
+
+    if (player.respawnTimer <= 0) {
+      player.position = { ...player.spawnPosition }
+      player.facing = player.spawnFacing
+      player.health = 100
+      player.hoverHeight = 4
+      player.targetHoverHeight = 4
+      player.destroyed = false
+      player.takeoffStarted = false
+      player.visualPitch = 0
+      player.visualRoll = 0
+      player.fireCooldown = 0.2
+      world.bullets = world.bullets.filter((bullet) => bullet.owner === 'player')
+      world.cameraTarget = { ...player.spawnPosition }
+      world.safeZone.active = true
+    }
+    return
+  }
+
+  if (!player.takeoffStarted) {
+    player.velocity.x = 0
+    player.velocity.y = 0
+    player.forwardSpeed = 0
+    player.angularVelocity = 0
+    player.hoverHeight = 4
+    player.targetHoverHeight = 4
+    player.visualPitch = lerp(player.visualPitch, 0, deltaSeconds / 0.12)
+    player.visualRoll = lerp(player.visualRoll, 0, deltaSeconds / 0.12)
+    player.mainRotorAngle += deltaSeconds * 16
+    player.tailRotorAngle += deltaSeconds * 20
+
+    if (input.forward) {
+      player.takeoffStarted = true
+      player.targetHoverHeight = 24
+    }
+
+    return
+  }
+
+  player.hoverHeight = approach(player.hoverHeight, player.targetHoverHeight, 7.5, deltaSeconds)
+
   const rotationIntent = Number(input.rotateRight) - Number(input.rotateLeft)
   const rotationAcceleration = rotationIntent === 0 ? 8 : 13.33
   const maxAngularVelocity = 2
@@ -119,14 +175,15 @@ export function updatePlayer(world: World, input: InputState, deltaSeconds: numb
   const moveLength = Math.hypot(moveForward, moveRight) || 1
   const moveScale = moveForward !== 0 || moveRight !== 0 ? 1 / moveLength : 0
   const speed = 28
+  const canTranslate = player.hoverHeight > 14
 
-  player.velocity.x = (forward.x * moveForward + right.x * moveRight) * moveScale * speed
-  player.velocity.y = (forward.y * moveForward + right.y * moveRight) * moveScale * speed
+  player.velocity.x = canTranslate ? (forward.x * moveForward + right.x * moveRight) * moveScale * speed : 0
+  player.velocity.y = canTranslate ? (forward.y * moveForward + right.y * moveRight) * moveScale * speed : 0
   player.forwardSpeed = player.velocity.x * forward.x + player.velocity.y * forward.y
 
   player.fireCooldown = Math.max(0, player.fireCooldown - deltaSeconds)
 
-  if (input.primaryFire && player.fireCooldown <= 0 && player.ammo > 0) {
+  if (input.primaryFire && player.fireCooldown <= 0 && canTranslate) {
     const bulletForward = forwardVector(player.facing)
     const muzzleOffset = 3.6
     spawnBullet(world, {
@@ -143,8 +200,8 @@ export function updatePlayer(world: World, input: InputState, deltaSeconds: numb
       radius: 0.8,
       damage: 10,
     })
+    queueAudio(world, 'player-fire')
     player.fireCooldown = 0.1
-    player.ammo -= 1
   }
 
   player.visualRoll = lerp(player.visualRoll, -player.angularVelocity * 0.3, deltaSeconds / 0.15)

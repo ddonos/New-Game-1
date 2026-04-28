@@ -30,7 +30,7 @@ export function createHud(root: HTMLElement): HudController {
     element,
     update(world) {
       hp.textContent = `${world.hud.hp}`
-      ammo.textContent = `${world.hud.ammo}`
+      ammo.textContent = '∞'
       score.textContent = `${world.hud.score}`
     },
   }

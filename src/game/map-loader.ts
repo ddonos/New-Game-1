@@ -32,6 +32,18 @@ export function loadMap(
   renderer.updateShadowBounds(map.size.width, map.size.height)
 
   const spawner = new Spawner(world, renderer.scene, assets)
+  world.safeZone = {
+    position: { ...map.playerSpawn.position },
+    radius: map.safeZone?.radius ?? 52,
+    active: true,
+  }
+  spawner.spawnHelipad(world.safeZone.position, world.safeZone.radius)
+
+  for (const spawn of map.spawns) {
+    if (spawn.kind === 'airbase') {
+      spawner.spawnAirbases(spawn)
+    }
+  }
 
   for (const spawn of map.spawns) {
     if (spawn.kind === 'forest-cluster') {

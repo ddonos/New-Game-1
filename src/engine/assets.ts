@@ -33,6 +33,11 @@ import explosionSpriteUrl from '../assets/textures/vfx/explosion-1-b-spritesheet
 import playerGunSfxUrl from '../assets/audio/player-gun.wav'
 import bulletHitSfxUrl from '../assets/audio/bullet-hit.wav'
 import baseDestroyedSfxUrl from '../assets/audio/base-destroyed.wav'
+import explosionSfxUrl from '../assets/audio/explosion.mp3'
+import gunFireSfxUrl from '../assets/audio/gun-fire.mp3'
+import rocketLaunchSfxUrl from '../assets/audio/rocket-launch.mp3'
+import rotorHoverSfxUrl from '../assets/audio/rotor-hover.mp3'
+import warningBeepSfxUrl from '../assets/audio/warning-beep.mp3'
 import gameplayMusicUrl from '../assets/audio/gameplay-loop.mp3'
 import menuMusicUrl from '../assets/audio/menu-loop.mp3'
 const treeModelUrls = {
@@ -64,6 +69,11 @@ export interface GameAssets {
     playerGunSfxUrl: string
     bulletHitSfxUrl: string
     baseDestroyedSfxUrl: string
+    explosionSfxUrl: string
+    gunFireSfxUrl: string
+    rocketLaunchSfxUrl: string
+    rotorHoverSfxUrl: string
+    warningBeepSfxUrl: string
     gameplayMusicUrl: string
     menuMusicUrl: string
   }
@@ -233,6 +243,11 @@ export async function loadAssets(): Promise<GameAssets> {
       playerGunSfxUrl,
       bulletHitSfxUrl,
       baseDestroyedSfxUrl,
+      explosionSfxUrl,
+      gunFireSfxUrl,
+      rocketLaunchSfxUrl,
+      rotorHoverSfxUrl,
+      warningBeepSfxUrl,
       gameplayMusicUrl,
       menuMusicUrl,
     },

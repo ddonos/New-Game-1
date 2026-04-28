@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+  <defs>
+    <linearGradient id="sea" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#2f7580"/>
+      <stop offset="1" stop-color="#10272c"/>
+    </linearGradient>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.14"/></feComponentTransfer>
+    </filter>
+  </defs>
+  <rect width="640" height="360" fill="url(#sea)"/>
+  <path d="M94 236 C126 176 210 160 260 204 C314 252 244 314 158 300 C110 292 70 278 94 236 Z" fill="#bda86a"/>
+  <path d="M372 164 C416 114 536 124 574 184 C610 242 526 284 434 256 C374 238 332 210 372 164 Z" fill="#c4b176"/>
+  <path d="M134 264 L252 216 L266 232 L150 282 Z" fill="#343a35"/>
+  <path d="M438 218 L552 176 L566 192 L452 236 Z" fill="#343a35"/>
+  <g fill="#315c31">
+    <circle cx="170" cy="218" r="22"/><circle cx="214" cy="236" r="16"/><circle cx="466" cy="170" r="22"/><circle cx="518" cy="206" r="18"/>
+  </g>
+  <g fill="none" stroke="#9ed6d7" stroke-width="3" opacity="0.5">
+    <path d="M0 70 C140 118 220 40 360 88 C492 132 548 82 640 112"/>
+    <path d="M0 118 C126 158 210 92 344 134 C488 178 560 130 640 154"/>
+  </g>
+  <rect width="640" height="360" filter="url(#grain)"/>
+</svg>
