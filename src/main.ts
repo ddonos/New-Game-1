@@ -2,6 +2,7 @@ import './style.css'
 import { getMapDefinition } from './content/maps/index.ts'
 import { createFixedStepLoop } from './engine/loop.ts'
 import { createAudioController } from './engine/audio.ts'
+import { createMenuAudioController } from './engine/menu-audio.ts'
 import { loadAssets } from './engine/assets.ts'
 import { createInput } from './engine/input.ts'
 import { createRenderer } from './engine/renderer.ts'
@@ -33,9 +34,14 @@ async function bootstrap() {
   }
 
   let gameStarted = false
+  let menuAudio = createMenuAudioController()
   let menu = createMainMenu(app.querySelector<HTMLElement>('.game-shell') ?? app, {
     onPlay: (worldId) => {
       void startGame(worldId)
+    },
+    onInteract: () => {
+      menuAudio.start()
+      menuAudio.click()
     },
   })
 
@@ -43,9 +49,15 @@ async function bootstrap() {
     stage.hidden = true
     stage.innerHTML = ''
     gameStarted = false
+    menuAudio.dispose()
+    menuAudio = createMenuAudioController()
     menu = createMainMenu(app.querySelector<HTMLElement>('.game-shell') ?? app, {
       onPlay: (worldId) => {
         void startGame(worldId)
+      },
+      onInteract: () => {
+        menuAudio.start()
+        menuAudio.click()
       },
     })
   }
@@ -56,6 +68,7 @@ async function bootstrap() {
     }
 
     gameStarted = true
+    menuAudio.stop()
     menu.destroy()
     stage.hidden = false
     stage.innerHTML = '<div class="game-loading" data-loading>Loading Forest Valley...</div>'
@@ -78,6 +91,9 @@ async function bootstrap() {
     loading?.remove()
 
     const pauseMenu = createPauseMenu(stage, {
+      onInteract() {
+        menuAudio.click()
+      },
       onResume() {
         paused = false
         audio.setPaused(false)

@@ -140,8 +140,8 @@ select {
 
 .menu__nav {
   position: fixed;
-  left: 2.5cm;
-  top: clamp(300px, 34vh, 380px);
+  left: 5cm;
+  top: calc(clamp(300px, 34vh, 380px) * 1.2);
   grid-column: 1;
   display: grid;
   gap: 12px;
@@ -404,19 +404,19 @@ select {
 }
 
 .menu-world--forest-valley .menu-world__image {
-  background-image: url('./assets/worlds/forest.svg');
+  background-image: url('./assets/worlds/forest_valley.png');
 }
 
 .menu-world--desert-front .menu-world__image {
-  background-image: url('./assets/worlds/desert.svg');
+  background-image: url('./assets/worlds/desert_front.png');
 }
 
 .menu-world--arctic-line .menu-world__image {
-  background-image: url('./assets/worlds/arctic.svg');
+  background-image: url('./assets/worlds/arctic_line.png');
 }
 
 .menu-world--island-siege .menu-world__image {
-  background-image: url('./assets/worlds/island.svg');
+  background-image: url('./assets/worlds/island_siege.png');
 }
 
 .menu-world__content {

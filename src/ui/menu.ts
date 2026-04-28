@@ -7,6 +7,7 @@ export interface MenuController {
 
 interface MenuOptions {
   onPlay: (worldId: WorldId) => void
+  onInteract?: () => void
 }
 
 const worlds: Array<{
@@ -84,6 +85,7 @@ export function createMainMenu(root: HTMLElement, options: MenuOptions): MenuCon
   }
 
   element.addEventListener('click', (event) => {
+    options.onInteract?.()
     const target = event.target
     if (!(target instanceof HTMLElement)) {
       return

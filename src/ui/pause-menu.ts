@@ -8,6 +8,7 @@ export interface PauseMenuController {
 }
 
 interface PauseMenuOptions {
+  onInteract?: () => void
   onResume: () => void
   onReturnHome: () => void
 }
@@ -48,6 +49,9 @@ export function createPauseMenu(root: HTMLElement, options: PauseMenuOptions): P
     }
 
     const action = target.closest<HTMLElement>('[data-pause-action]')?.dataset.pauseAction
+    if (action) {
+      options.onInteract?.()
+    }
     if (action === 'resume') {
       options.onResume()
     } else if (action === 'home') {
