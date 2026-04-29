@@ -51,7 +51,7 @@ export function createMainMenu(root: HTMLElement, options: MenuOptions): MenuCon
       </nav>
 
       <section class="menu__content" data-menu-content="worlds" hidden>
-        <h2>Select World</h2>
+        <h2>Select Battlefield</h2>
         <div class="menu-worlds">${renderWorldCards()}</div>
       </section>
 

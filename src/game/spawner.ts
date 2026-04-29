@@ -283,13 +283,16 @@ function createRocketLauncher() {
   const root = new Group()
   addBox(root, [6.5, 1.1, 4.4], 0x2f3b34, [0, 0.55, 0], 0, 0.8)
   addBox(root, [4.8, 1, 2.8], 0x4d5b50, [0, 1.45, 0.1], 0, 0.72)
-  addBox(root, [4.9, 0.55, 5.6], 0x2a332e, [0, 2.2, 1.4], 0, 0.72)
-  addCylinder(root, 0.38, 0.38, 5.8, 0x1d2421, [-1.35, 2.65, 1.7], [Math.PI / 2, 0, 0])
-  addCylinder(root, 0.38, 0.38, 5.8, 0x1d2421, [0, 2.65, 1.7], [Math.PI / 2, 0, 0])
-  addCylinder(root, 0.38, 0.38, 5.8, 0x1d2421, [1.35, 2.65, 1.7], [Math.PI / 2, 0, 0])
-  addCylinder(root, 0.32, 0.38, 3.8, 0x6d766b, [-1.35, 2.66, 2.4], [Math.PI / 2, 0, 0])
-  addCylinder(root, 0.32, 0.38, 3.8, 0x6d766b, [0, 2.66, 2.4], [Math.PI / 2, 0, 0])
-  addCylinder(root, 0.32, 0.38, 3.8, 0x6d766b, [1.35, 2.66, 2.4], [Math.PI / 2, 0, 0])
+  const rack = new Group()
+  rack.rotation.x = -Math.PI / 4
+  root.add(rack)
+  addBox(rack, [4.9, 0.55, 5.6], 0x2a332e, [0, 2.2, 0.65], 0, 0.72)
+  addCylinder(rack, 0.38, 0.38, 5.8, 0x1d2421, [-1.35, 2.65, 0.95], [Math.PI / 2, 0, 0])
+  addCylinder(rack, 0.38, 0.38, 5.8, 0x1d2421, [0, 2.65, 0.95], [Math.PI / 2, 0, 0])
+  addCylinder(rack, 0.38, 0.38, 5.8, 0x1d2421, [1.35, 2.65, 0.95], [Math.PI / 2, 0, 0])
+  addCylinder(rack, 0.32, 0.38, 3.8, 0x6d766b, [-1.35, 2.66, 1.65], [Math.PI / 2, 0, 0])
+  addCylinder(rack, 0.32, 0.38, 3.8, 0x6d766b, [0, 2.66, 1.65], [Math.PI / 2, 0, 0])
+  addCylinder(rack, 0.32, 0.38, 3.8, 0x6d766b, [1.35, 2.66, 1.65], [Math.PI / 2, 0, 0])
   addBox(root, [7.8, 0.28, 0.42], 0x151a17, [0, 0.16, -2.15], 0, 0.9)
   addBox(root, [7.8, 0.28, 0.42], 0x151a17, [0, 0.16, 2.15], 0, 0.9)
   return root
@@ -504,7 +507,7 @@ export class Spawner {
         projectileDamage: 12,
         projectileLifetime: 4.5,
         muzzleOffset: 5.2,
-        muzzleAltitude: 2.8,
+        muzzleAltitude: 4.7,
       })
       const root = createRocketLauncher()
       root.position.set(position.x, 0, position.y)

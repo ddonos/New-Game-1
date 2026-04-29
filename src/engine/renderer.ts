@@ -347,9 +347,9 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
         playerView.bodyPivot.rotation.z = world.player.visualRoll
         playerView.bodyPivot.rotation.x = world.player.visualPitch
         playerView.mainRotor.rotation.x = Number(playerView.mainRotor.userData.baseRotationX ?? 0)
-        playerView.mainRotor.rotation.y =
-          Number(playerView.mainRotor.userData.baseRotationY ?? 0) + world.player.mainRotorAngle
-        playerView.mainRotor.rotation.z = Number(playerView.mainRotor.userData.baseRotationZ ?? 0)
+        playerView.mainRotor.rotation.y = Number(playerView.mainRotor.userData.baseRotationY ?? 0)
+        playerView.mainRotor.rotation.z =
+          Number(playerView.mainRotor.userData.baseRotationZ ?? 0) + world.player.mainRotorAngle
         playerView.tailRotor.rotation.x =
           Number(playerView.tailRotor.userData.baseRotationX ?? 0) + world.player.tailRotorAngle
       }
