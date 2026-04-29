@@ -85,6 +85,7 @@ export interface PlayerState {
   destroyed: boolean
   takeoffStarted: boolean
   respawnTimer: number
+  respawnsRemaining: number
 }
 
 export interface BulletState {
@@ -104,7 +105,7 @@ export interface BulletState {
 
 export interface EffectState {
   id: string
-  kind: 'explosion' | 'smoke'
+  kind: 'explosion' | 'smoke' | 'spark'
   position: Vec2
   altitude: number
   age: number
@@ -149,6 +150,6 @@ export interface PropState {
 
 export interface HUDState {
   hp: number
-  ammo: number
+  respawns: number
   score: number
 }

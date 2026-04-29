@@ -22,18 +22,27 @@ export function createMenuAudioController(): MenuAudioController {
     pool: 4,
   })
 
-  let started = false
+  let playId: number | null = null
+
+  music.on('playerror', (id) => {
+    if (id === playId) {
+      playId = null
+    }
+  })
+
+  music.on('end', () => {
+    playId = null
+  })
 
   return {
     start() {
-      if (!started) {
-        music.play()
-        started = true
+      if (playId === null || !music.playing(playId)) {
+        playId = music.play()
       }
     },
     stop() {
       music.stop()
-      started = false
+      playId = null
     },
     click() {
       click.play()

@@ -11,7 +11,7 @@ export function createHud(root: HTMLElement): HudController {
   element.innerHTML = `
     <div class="hud__row">
       <div class="hud__chip"><span class="hud__label">HP</span><strong data-hud="hp">100</strong></div>
-      <div class="hud__chip"><span class="hud__label">Ammo</span><strong data-hud="ammo">200</strong></div>
+      <div class="hud__chip"><span class="hud__label">Respawns</span><strong class="hud__hearts" data-hud="respawns">♥♥</strong></div>
       <div class="hud__chip"><span class="hud__label">Score</span><strong data-hud="score">0</strong></div>
     </div>
     <div class="hud__hint">WASD move, Q/E rotate, SPACE fire</div>
@@ -19,10 +19,10 @@ export function createHud(root: HTMLElement): HudController {
   root.append(element)
 
   const hp = element.querySelector<HTMLElement>('[data-hud="hp"]')
-  const ammo = element.querySelector<HTMLElement>('[data-hud="ammo"]')
+  const respawns = element.querySelector<HTMLElement>('[data-hud="respawns"]')
   const score = element.querySelector<HTMLElement>('[data-hud="score"]')
 
-  if (!hp || !ammo || !score) {
+  if (!hp || !respawns || !score) {
     throw new Error('HUD mount failed')
   }
 
@@ -30,7 +30,7 @@ export function createHud(root: HTMLElement): HudController {
     element,
     update(world) {
       hp.textContent = `${world.hud.hp}`
-      ammo.textContent = '∞'
+      respawns.textContent = '♥'.repeat(world.hud.respawns)
       score.textContent = `${world.hud.score}`
     },
   }

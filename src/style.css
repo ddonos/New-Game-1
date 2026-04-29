@@ -120,6 +120,10 @@ select {
   display: none !important;
 }
 
+.mission-end[hidden] {
+  display: none !important;
+}
+
 .menu__backdrop {
   position: absolute;
   inset: 0;
@@ -369,7 +373,20 @@ select {
   pointer-events: auto;
 }
 
-.pause-menu__panel {
+.mission-end {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(6, 10, 8, 0.68);
+  backdrop-filter: blur(7px);
+  pointer-events: auto;
+}
+
+.pause-menu__panel,
+.mission-end__panel {
   position: relative;
   overflow: hidden;
   width: min(420px, 100%);
@@ -395,7 +412,8 @@ select {
   letter-spacing: 0.16em;
 }
 
-.pause-menu h2 {
+.pause-menu h2,
+.mission-end h2 {
   margin: 6px 0 0;
   font-size: 34px;
   line-height: 1;
@@ -403,6 +421,48 @@ select {
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.65);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.mission-end p {
+  margin: 14px 0 0;
+  color: var(--ui-muted);
+}
+
+.mission-end p strong {
+  color: var(--ui-accent);
+}
+
+.mission-end__field {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.mission-end__field span {
+  color: var(--ui-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.mission-end__field input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(143, 151, 133, 0.46);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(38, 53, 45, 0.74), rgba(0, 0, 0, 0.38));
+  color: var(--ui-ink);
+  padding: 0 14px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  outline: none;
+}
+
+.mission-end__field input:focus {
+  border-color: rgba(215, 182, 90, 0.78);
+  box-shadow: 0 0 0 2px rgba(215, 182, 90, 0.12);
 }
 
 .pause-menu__stats {
@@ -628,6 +688,11 @@ select {
   font-size: 24px;
   font-weight: 700;
   color: #f4f7e8;
+}
+
+.hud__hearts {
+  color: #e0523d !important;
+  letter-spacing: 0.08em;
 }
 
 .hud__hint {

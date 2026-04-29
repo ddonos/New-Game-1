@@ -44,6 +44,7 @@ export interface World {
   }
   hud: HUDState
   score: number
+  missionStatus: 'playing' | 'victory' | 'defeat'
   cameraTarget: Vec2
   mapSize: {
     width: number
@@ -82,6 +83,7 @@ export function createWorld(): World {
       destroyed: false,
       takeoffStarted: false,
       respawnTimer: 0,
+      respawnsRemaining: 2,
     },
     bullets: [],
     bases: [],
@@ -96,10 +98,11 @@ export function createWorld(): World {
     },
     hud: {
       hp: 100,
-      ammo: 200,
+      respawns: 2,
       score: 0,
     },
     score: 0,
+    missionStatus: 'playing',
     cameraTarget: { x: 0, y: 0 },
     mapSize: {
       width: 320,
@@ -192,6 +195,6 @@ export function spawnProp(
 
 export function refreshHud(world: World) {
   world.hud.hp = Math.max(0, Math.round(world.player.health))
-  world.hud.ammo = Math.max(0, world.player.ammo)
+  world.hud.respawns = Math.max(0, world.player.respawnsRemaining)
   world.hud.score = world.score
 }

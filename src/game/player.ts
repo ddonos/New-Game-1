@@ -9,6 +9,7 @@ import type { InputState } from '../engine/input.ts'
 import {
   queueAudio,
   spawnBullet,
+  spawnEffect,
   type PlayerView,
   type World,
 } from '../ecs/world.ts'
@@ -84,6 +85,8 @@ export function initializePlayer(
   }
 
   mainRotor.userData.baseRotationY = mainRotor.rotation.y
+  mainRotor.userData.baseRotationX = mainRotor.rotation.x
+  mainRotor.userData.baseRotationZ = mainRotor.rotation.z
   tailRotor.userData.baseRotationX = tailRotor.rotation.x
 
   bodyPivot.add(model)
@@ -106,6 +109,13 @@ export function initializePlayer(
 export function updatePlayer(world: World, input: InputState, deltaSeconds: number) {
   const player = world.player
 
+  if (world.missionStatus !== 'playing') {
+    player.velocity.x = 0
+    player.velocity.y = 0
+    player.angularVelocity = 0
+    return
+  }
+
   if (player.destroyed) {
     player.respawnTimer = Math.max(0, player.respawnTimer - deltaSeconds)
     player.velocity.x = 0
@@ -117,6 +127,12 @@ export function updatePlayer(world: World, input: InputState, deltaSeconds: numb
     player.tailRotorAngle += deltaSeconds * 16
 
     if (player.respawnTimer <= 0) {
+      if (player.respawnsRemaining <= 0) {
+        world.missionStatus = 'defeat'
+        return
+      }
+
+      player.respawnsRemaining -= 1
       player.position = { ...player.spawnPosition }
       player.facing = player.spawnFacing
       player.health = 100
@@ -186,19 +202,35 @@ export function updatePlayer(world: World, input: InputState, deltaSeconds: numb
   if (input.primaryFire && player.fireCooldown <= 0 && canTranslate) {
     const bulletForward = forwardVector(player.facing)
     const muzzleOffset = 3.6
+    const muzzlePosition = {
+      x: player.position.x + bulletForward.x * muzzleOffset,
+      y: player.position.y + bulletForward.y * muzzleOffset,
+    }
     spawnBullet(world, {
-      position: {
-        x: player.position.x + bulletForward.x * muzzleOffset,
-        y: player.position.y + bulletForward.y * muzzleOffset,
-      },
+      position: muzzlePosition,
       velocity: {
         x: bulletForward.x * 80,
         y: bulletForward.y * 80,
       },
       altitude: player.hoverHeight - 2.2,
       lifetime: 1.1,
-      radius: 0.8,
+      radius: 0.35,
       damage: 10,
+    })
+    spawnEffect(world, {
+      kind: 'spark',
+      position: {
+        x: muzzlePosition.x + bulletForward.x * 0.45,
+        y: muzzlePosition.y + bulletForward.y * 0.45,
+      },
+      altitude: player.hoverHeight - 2.2,
+      lifetime: 0.09,
+      scale: 0.62,
+      color: 0xffd35a,
+      emissive: 0xff9b2f,
+      emissiveIntensity: 1.8,
+      opacity: 0.86,
+      verticalRise: 0.05,
     })
     queueAudio(world, 'player-fire')
     player.fireCooldown = 0.1

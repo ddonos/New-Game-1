@@ -140,6 +140,11 @@ function segmentHitsCircle(start: Vec2, end: Vec2, center: Vec2, radius: number)
 }
 
 export function updateCombat(world: World, deltaSeconds: number) {
+  if (world.missionStatus !== 'playing') {
+    refreshHud(world)
+    return
+  }
+
   const spentBullets = new Set<string>()
   const playerSafeDistance = Math.hypot(
     world.player.position.x - world.safeZone.position.x,
@@ -225,6 +230,12 @@ export function updateCombat(world: World, deltaSeconds: number) {
 
   if (spentBullets.size > 0) {
     world.bullets = world.bullets.filter((bullet) => !spentBullets.has(bullet.id))
+  }
+
+  if (world.bases.length > 0 && world.bases.every((base) => !base.alive)) {
+    world.missionStatus = 'victory'
+    refreshHud(world)
+    return
   }
 
   for (const base of world.bases) {

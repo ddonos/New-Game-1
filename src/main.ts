@@ -13,6 +13,7 @@ import { loadMap } from './game/map-loader.ts'
 import { initializePlayer, updatePlayer } from './game/player.ts'
 import { createHud } from './ui/hud.ts'
 import { createMainMenu, type WorldId } from './ui/menu.ts'
+import { createMissionEndMenu, type MissionEndController } from './ui/mission-end.ts'
 import { createPauseMenu } from './ui/pause-menu.ts'
 
 async function bootstrap() {
@@ -44,6 +45,7 @@ async function bootstrap() {
       menuAudio.click()
     },
   })
+  menuAudio.start()
 
   const showHome = () => {
     stage.hidden = true
@@ -60,6 +62,7 @@ async function bootstrap() {
         menuAudio.click()
       },
     })
+    menuAudio.start()
   }
 
   const startGame = async (worldId: WorldId) => {
@@ -83,12 +86,23 @@ async function bootstrap() {
     const map = getMapDefinition(worldId)
     let paused = false
     let escapeWasDown = false
+    let missionEndMenu: MissionEndController | null = null
 
     initializePlayer(world, renderer.scene, assets, map.playerSpawn)
     loadMap(world, renderer, assets, map)
     refreshHud(world)
     hud.update(world)
     loading?.remove()
+
+    const cleanupAndReturnHome = () => {
+      loop.stop()
+      input.dispose()
+      audio.dispose()
+      renderer.dispose()
+      pauseMenu.destroy()
+      missionEndMenu?.destroy()
+      showHome()
+    }
 
     const pauseMenu = createPauseMenu(stage, {
       onInteract() {
@@ -100,12 +114,7 @@ async function bootstrap() {
         pauseMenu.setVisible(false)
       },
       onReturnHome() {
-        loop.stop()
-        input.dispose()
-        audio.dispose()
-        renderer.dispose()
-        pauseMenu.destroy()
-        showHome()
+        cleanupAndReturnHome()
       },
     })
 
@@ -129,6 +138,17 @@ async function bootstrap() {
         updateCombat(world, deltaSeconds)
         audio.update(world)
         hud.update(world)
+
+        if (world.missionStatus !== 'playing' && !missionEndMenu) {
+          paused = true
+          audio.setPaused(true)
+          pauseMenu.setVisible(false)
+          missionEndMenu = createMissionEndMenu(stage, {
+            outcome: world.missionStatus,
+            score: world.score,
+            onReturnHome: cleanupAndReturnHome,
+          })
+        }
       },
       (_alpha, elapsedSeconds) => {
         renderer.syncWorld(world, elapsedSeconds)

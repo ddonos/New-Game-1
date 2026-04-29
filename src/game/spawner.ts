@@ -192,7 +192,36 @@ function createHangar() {
   return root
 }
 
-function createParkedAircraft() {
+function createParkedAircraft(template?: Group) {
+  if (template) {
+    const root = new Group()
+    const model = cloneTemplate(template)
+    root.add(model)
+
+    const hardpoints = [
+      { x: -6.2, z: 1.6 },
+      { x: -3.7, z: 2.2 },
+      { x: 3.7, z: 2.2 },
+      { x: 6.2, z: 1.6 },
+    ]
+    for (const point of hardpoints) {
+      addBox(root, [0.55, 0.18, 1.35], 0x252d2a, [point.x, 0.7, point.z], 0, 0.62)
+      addCylinder(root, 0.2, 0.27, 3, 0xd7dbcd, [point.x, 0.46, point.z + 0.45], [Math.PI / 2, 0, 0])
+      const missileNose = new Mesh(
+        new ConeGeometry(0.23, 0.7, 12),
+        new MeshStandardMaterial({ color: 0xd85132, roughness: 0.42, metalness: 0.1 }),
+      )
+      missileNose.position.set(point.x, 0.46, point.z + 2.3)
+      missileNose.rotation.x = Math.PI / 2
+      missileNose.castShadow = true
+      root.add(missileNose)
+    }
+
+    addBox(root, [1.7, 0.32, 2.7], 0x273431, [-1.45, 0.3, -8.2], 0, 0.72)
+    addBox(root, [1.7, 0.32, 2.7], 0x273431, [1.45, 0.3, -8.2], 0, 0.72)
+    return root
+  }
+
   const root = new Group()
   addCylinder(root, 0.78, 1.25, 17.5, 0x6f7d79, [0, 1.45, 0], [Math.PI / 2, 0, 0])
   const nose = new Mesh(
@@ -440,11 +469,11 @@ export class Spawner {
         variant: 'parked-attack-aircraft',
         health: 70,
         maxHealth: 70,
-        radius: 10,
+        radius: 9,
         scoreValue: 220,
         alive: true,
       })
-      const root = createParkedAircraft()
+      const root = createParkedAircraft(this.assets.fighterJetTemplate)
       root.position.set(position.x, 0, position.y)
       root.rotation.y = yaw
       this.scene.add(root)
@@ -465,7 +494,7 @@ export class Spawner {
         variant: 'rocket-launcher',
         health: 100,
         maxHealth: 100,
-        radius: 10,
+        radius: 4.8,
         scoreValue: 350,
         alive: true,
         attackRange: 132,

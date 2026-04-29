@@ -12,8 +12,10 @@ import {
 } from 'three'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import helicopterModelUrl from '../assets/models/helicopter/helicopter.fbx?url'
 import helicopterTextureUrl from '../assets/models/helicopter/blend 32.png'
+import fighterJetModelUrl from '../assets/models/aircraft/fighter_jet.obj?url'
 import tree1BModelUrl from '../assets/models/nature/Tree_1_B_Color1.gltf?url'
 import tree2AModelUrl from '../assets/models/nature/Tree_2_A_Color1.gltf?url'
 import tree3AModelUrl from '../assets/models/nature/Tree_3_A_Color1.gltf?url'
@@ -57,6 +59,7 @@ const buildingModelUrls = {
 
 export interface GameAssets {
   helicopterTemplate: Group
+  fighterJetTemplate: Group
   treeTemplates: Record<string, Group>
   buildingTemplates: Record<string, Group>
   groundTexture: Texture
@@ -107,6 +110,19 @@ function loadGLTFScene(url: string): Promise<Group> {
     loader.load(
       url,
       (gltf) => resolve(gltf.scene),
+      undefined,
+      (error) => reject(error),
+    )
+  })
+}
+
+function loadOBJ(url: string): Promise<Group> {
+  const loader = new OBJLoader()
+
+  return new Promise((resolve, reject) => {
+    loader.load(
+      url,
+      (object) => resolve(object),
       undefined,
       (error) => reject(error),
     )
@@ -171,8 +187,9 @@ function centerOnGround(root: Object3D) {
 }
 
 export async function loadAssets(): Promise<GameAssets> {
-  const [helicopter, helicopterTexture, groundTexture] = await Promise.all([
+  const [helicopter, fighterJet, helicopterTexture, groundTexture] = await Promise.all([
     loadFBX(helicopterModelUrl),
+    loadOBJ(fighterJetModelUrl),
     loadTexture(helicopterTextureUrl),
     loadTexture(groundTextureUrl),
   ])
@@ -196,6 +213,24 @@ export async function loadAssets(): Promise<GameAssets> {
   normalizeLongestSide(helicopter, 16)
   centerOnGround(helicopter)
   setShadows(helicopter)
+
+  // This OBJ is a 3ds Max export using Z-up coordinates. Rotate it once at import
+  // so its length stays on the ground plane instead of becoming object height.
+  fighterJet.rotation.x = -Math.PI / 2
+  fighterJet.updateMatrixWorld(true)
+  forEachMesh(fighterJet, (mesh) => {
+    const isGlass = mesh.name.toLowerCase().includes('glass')
+    const material = coerceStandardMaterial(mesh, isGlass ? 0x13232b : 0x64706b)
+    material.roughness = isGlass ? 0.18 : 0.56
+    material.metalness = isGlass ? 0.02 : 0.3
+    material.transparent = isGlass
+    material.opacity = isGlass ? 0.74 : 1
+    material.emissive.setHex(isGlass ? 0x061018 : 0x000000)
+    material.emissiveIntensity = isGlass ? 0.18 : 0
+  })
+  normalizeLongestSide(fighterJet, 23)
+  centerOnGround(fighterJet)
+  setShadows(fighterJet)
 
   const treeTemplates = Object.fromEntries(treeEntries)
   for (const tree of Object.values(treeTemplates)) {
@@ -231,6 +266,7 @@ export async function loadAssets(): Promise<GameAssets> {
 
   return {
     helicopterTemplate: helicopter,
+    fighterJetTemplate: fighterJet,
     treeTemplates,
     buildingTemplates,
     groundTexture,

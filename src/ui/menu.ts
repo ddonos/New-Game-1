@@ -1,3 +1,5 @@
+import { renderLeaderboardItems } from './leaderboard.ts'
+
 export type WorldId = 'forest-valley' | 'desert-front' | 'arctic-line' | 'island-siege'
 
 export interface MenuController {
@@ -56,9 +58,7 @@ export function createMainMenu(root: HTMLElement, options: MenuOptions): MenuCon
       <section class="menu__content" data-menu-content="leaderboard" hidden>
         <h2>Leaderboard</h2>
         <ol class="menu-ranks">
-          <li><span>1</span><strong>ACE-01</strong><em>12,400</em></li>
-          <li><span>2</span><strong>RAVEN</strong><em>9,850</em></li>
-          <li><span>3</span><strong>VIPER</strong><em>7,600</em></li>
+          ${renderLeaderboardItems()}
         </ol>
       </section>
 

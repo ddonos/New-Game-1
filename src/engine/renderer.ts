@@ -1,5 +1,6 @@
 import {
   AmbientLight,
+  BoxGeometry,
   Color,
   ConeGeometry,
   CylinderGeometry,
@@ -175,6 +176,31 @@ function createEffectView(effect: EffectState) {
   const color = effect.color ?? (effect.kind === 'explosion' ? 0xff7b2f : 0x899187)
   const emissive = effect.emissive ?? (effect.kind === 'explosion' ? 0xff3b00 : 0x000000)
   const emissiveIntensity = effect.emissiveIntensity ?? (effect.kind === 'explosion' ? 1.35 : 0)
+
+  if (effect.kind === 'spark') {
+    const root = new Group()
+    const sparkColors = [0xfff0a0, 0xff9b2f, 0xffd35a]
+    for (let index = 0; index < 5; index += 1) {
+      const colorValue = sparkColors[index % sparkColors.length]!
+      const streak = new Mesh(
+        new BoxGeometry(0.08, 0.08, 1),
+        new MeshStandardMaterial({
+          color: colorValue,
+          transparent: true,
+          opacity: effect.opacity ?? 0.86,
+          emissive: colorValue,
+          emissiveIntensity: effect.emissiveIntensity ?? 1.6,
+          depthWrite: false,
+        }),
+      )
+      streak.rotation.y = (index / 5) * Math.PI * 2
+      streak.rotation.x = index % 2 === 0 ? 0.22 : -0.2
+      streak.position.z = 0.08 * index
+      root.add(streak)
+    }
+    return root
+  }
+
   const mesh = new Mesh(
     new SphereGeometry(1, effect.kind === 'explosion' ? 8 : 6, effect.kind === 'explosion' ? 6 : 4),
     new MeshStandardMaterial({
@@ -194,13 +220,15 @@ function createEffectView(effect: EffectState) {
 }
 
 function setEffectOpacity(root: Object3D, opacity: number, emissiveIntensity: number) {
-  if (!(root instanceof Mesh)) {
-    return
-  }
+  root.traverse((child) => {
+    if (!(child instanceof Mesh)) {
+      return
+    }
 
-  const material = root.material as MeshStandardMaterial
-  material.opacity = opacity
-  material.emissiveIntensity = emissiveIntensity
+    const material = child.material as MeshStandardMaterial
+    material.opacity = opacity
+    material.emissiveIntensity = emissiveIntensity
+  })
 }
 
 export function createRenderer(viewport: HTMLElement): RendererContext {
@@ -318,8 +346,10 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
         playerView.yawPivot.rotation.y = world.player.facing
         playerView.bodyPivot.rotation.z = world.player.visualRoll
         playerView.bodyPivot.rotation.x = world.player.visualPitch
+        playerView.mainRotor.rotation.x = Number(playerView.mainRotor.userData.baseRotationX ?? 0)
         playerView.mainRotor.rotation.y =
           Number(playerView.mainRotor.userData.baseRotationY ?? 0) + world.player.mainRotorAngle
+        playerView.mainRotor.rotation.z = Number(playerView.mainRotor.userData.baseRotationZ ?? 0)
         playerView.tailRotor.rotation.x =
           Number(playerView.tailRotor.userData.baseRotationX ?? 0) + world.player.tailRotorAngle
       }
@@ -375,7 +405,7 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
         const progress = effect.age / Math.max(effect.lifetime, 0.001)
         const baseOpacity = effect.opacity ?? (effect.kind === 'explosion' ? 0.82 : 0.38)
         const emissiveIntensity = effect.emissiveIntensity ?? (effect.kind === 'explosion' ? 1.35 : 0)
-        const growth = effect.kind === 'explosion' ? 0.72 + progress * 2.15 : 0.65 + progress * 1.55
+        const growth = effect.kind === 'explosion' ? 0.72 + progress * 2.15 : effect.kind === 'spark' ? 1 + progress * 0.45 : 0.65 + progress * 1.55
         const rise = effect.verticalRise ?? (effect.kind === 'explosion' ? 1.6 : 2.2)
         view.root.position.set(effect.position.x, effect.altitude + progress * rise, effect.position.y)
         view.root.scale.setScalar(effect.scale * growth)
