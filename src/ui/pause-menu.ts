@@ -22,9 +22,9 @@ export function createPauseMenu(root: HTMLElement, options: PauseMenuOptions): P
       <span class="pause-menu__eyebrow">Mission Paused</span>
       <h2>Forest Valley</h2>
       <div class="pause-menu__stats">
-        <div><span>HP</span><strong data-pause="hp">100</strong></div>
-        <div><span>Score</span><strong data-pause="score">0</strong></div>
-        <div><span>Launchers</span><strong data-pause="launchers">0</strong></div>
+        <div class="hud__chip"><span class="hud__label">HP</span><strong data-pause="hp">100</strong></div>
+        <div class="hud__chip"><span class="hud__label">Respawns</span><strong class="hud__hearts" data-pause="respawns">&hearts;&hearts;</strong></div>
+        <div class="hud__chip"><span class="hud__label">Score</span><strong data-pause="score">0</strong></div>
       </div>
       <div class="pause-menu__actions">
         <button class="menu-button menu-button--primary" data-pause-action="resume">Resume</button>
@@ -35,10 +35,10 @@ export function createPauseMenu(root: HTMLElement, options: PauseMenuOptions): P
   root.append(element)
 
   const hp = element.querySelector<HTMLElement>('[data-pause="hp"]')
+  const respawns = element.querySelector<HTMLElement>('[data-pause="respawns"]')
   const score = element.querySelector<HTMLElement>('[data-pause="score"]')
-  const launchers = element.querySelector<HTMLElement>('[data-pause="launchers"]')
 
-  if (!hp || !score || !launchers) {
+  if (!hp || !respawns || !score) {
     throw new Error('Pause menu mount failed')
   }
 
@@ -66,8 +66,8 @@ export function createPauseMenu(root: HTMLElement, options: PauseMenuOptions): P
     },
     update(world) {
       hp.textContent = `${world.hud.hp}`
+      respawns.textContent = '\u2665'.repeat(world.hud.respawns)
       score.textContent = `${world.hud.score}`
-      launchers.textContent = `${world.bases.filter((base) => base.alive && base.attackRange !== undefined).length}`
     },
     destroy() {
       element.remove()

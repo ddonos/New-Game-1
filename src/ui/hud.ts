@@ -11,7 +11,7 @@ export function createHud(root: HTMLElement): HudController {
   element.innerHTML = `
     <div class="hud__row">
       <div class="hud__chip"><span class="hud__label">HP</span><strong data-hud="hp">100</strong></div>
-      <div class="hud__chip"><span class="hud__label">Respawns</span><strong class="hud__hearts" data-hud="respawns">♥♥</strong></div>
+      <div class="hud__chip"><span class="hud__label">Respawns</span><strong class="hud__hearts" data-hud="respawns">&hearts;&hearts;</strong></div>
       <div class="hud__chip"><span class="hud__label">Score</span><strong data-hud="score">0</strong></div>
     </div>
     <div class="hud__hint">WASD move, Q/E rotate, SPACE fire</div>
@@ -30,7 +30,7 @@ export function createHud(root: HTMLElement): HudController {
     element,
     update(world) {
       hp.textContent = `${world.hud.hp}`
-      respawns.textContent = '♥'.repeat(world.hud.respawns)
+      respawns.textContent = '\u2665'.repeat(world.hud.respawns)
       score.textContent = `${world.hud.score}`
     },
   }
