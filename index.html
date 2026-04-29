@@ -8,6 +8,14 @@
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module">
+      const openedBuiltIndex = window.location.pathname.replaceAll('\\', '/').endsWith('/dist/index.html')
+
+      if (window.location.protocol === 'file:' && !openedBuiltIndex) {
+        window.location.replace(new URL('./dist/index.html', window.location.href))
+      } else {
+        await import('/src/main.ts')
+      }
+    </script>
   </body>
 </html>
