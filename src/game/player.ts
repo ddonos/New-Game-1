@@ -1,8 +1,9 @@
 import {
+  Box3,
   Group,
-  Mesh,
   Object3D,
   type Scene,
+  Vector3,
 } from 'three'
 import type { GameAssets } from '../engine/assets.ts'
 import type { InputState } from '../engine/input.ts'
@@ -41,20 +42,36 @@ function rightVector(facing: number) {
   }
 }
 
-function findMeshByName(root: Object3D, targetName: string): Mesh | null {
-  let match: Mesh | null = null
+function findObjectByName(root: Object3D, targetName: string): Object3D | null {
+  let match: Object3D | null = null
 
   root.traverse((child) => {
     if (match) {
       return
     }
 
-    if (child instanceof Mesh && child.name === targetName) {
+    if (child.name === targetName) {
       match = child
     }
   })
 
   return match
+}
+
+function createCenteredSpinPivot(model: Group, rotor: Object3D, name: string) {
+  model.updateMatrixWorld(true)
+  rotor.updateMatrixWorld(true)
+
+  const bounds = new Box3().setFromObject(rotor)
+  const center = bounds.getCenter(new Vector3())
+  model.worldToLocal(center)
+
+  const pivot = new Group()
+  pivot.name = name
+  pivot.position.copy(center)
+  model.add(pivot)
+  pivot.attach(rotor)
+  return pivot
 }
 
 export function initializePlayer(
@@ -77,17 +94,24 @@ export function initializePlayer(
   const bodyPivot = new Group()
   const model = assets.helicopterTemplate.clone(true)
 
-  const mainRotor = findMeshByName(model, 'Heli')
-  const tailRotor = findMeshByName(model, 'Tail')
+  const mainRotorBlades = findObjectByName(model, 'Group4')
+  const tailRotorBlades = findObjectByName(model, 'Group18')
 
-  if (!mainRotor || !tailRotor) {
-    throw new Error('Helicopter FBX is missing expected Heli/Tail propeller meshes')
+  if (!mainRotorBlades || !tailRotorBlades) {
+    throw new Error('Helicopter GLB is missing expected rotor objects')
   }
+
+  const mainRotor = createCenteredSpinPivot(model, mainRotorBlades, 'MainRotorPivot')
+  const tailRotorPivot = createCenteredSpinPivot(model, tailRotorBlades, 'TailRotorPivot')
 
   mainRotor.userData.baseRotationY = mainRotor.rotation.y
   mainRotor.userData.baseRotationX = mainRotor.rotation.x
   mainRotor.userData.baseRotationZ = mainRotor.rotation.z
-  tailRotor.userData.baseRotationX = tailRotor.rotation.x
+  mainRotor.userData.spinAxis = 'y'
+  tailRotorPivot.userData.baseRotationX = tailRotorPivot.rotation.x
+  tailRotorPivot.userData.baseRotationY = tailRotorPivot.rotation.y
+  tailRotorPivot.userData.baseRotationZ = tailRotorPivot.rotation.z
+  tailRotorPivot.userData.spinAxis = 'x'
 
   bodyPivot.add(model)
   yawPivot.add(bodyPivot)
@@ -100,7 +124,7 @@ export function initializePlayer(
     bodyPivot,
     model,
     mainRotor,
-    tailRotor,
+    tailRotor: tailRotorPivot,
   }
 
   world.views.player = view

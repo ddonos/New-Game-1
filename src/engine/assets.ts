@@ -1,5 +1,7 @@
 import {
   Box3,
+  BufferGeometry,
+  Float32BufferAttribute,
   Group,
   Mesh,
   MeshStandardMaterial,
@@ -13,8 +15,8 @@ import {
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
-import helicopterModelUrl from '../assets/models/helicopter/helicopter.fbx?url'
-import helicopterTextureUrl from '../assets/models/helicopter/blend 32.png'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import helicopterModelUrl from '../assets/models/helicopter/helicopter.glb?url'
 import fighterJetModelUrl from '../assets/models/aircraft/fighter_jet.obj?url'
 import tree1BModelUrl from '../assets/models/nature/Tree_1_B_Color1.gltf?url'
 import tree2AModelUrl from '../assets/models/nature/Tree_2_A_Color1.gltf?url'
@@ -27,9 +29,7 @@ import marketModelUrl from '../assets/models/buildings/base-market-a.fbx?url'
 import templeModelUrl from '../assets/models/buildings/base-temple-a.fbx?url'
 import towncenterModelUrl from '../assets/models/buildings/base-towncenter-a.fbx?url'
 import groundTextureUrl from '../assets/textures/terrain/grass.png'
-import turretBaseUrl from '../assets/models/turrets/turretBase.fbx?url'
-import turretTopUrl from '../assets/models/turrets/turret01.fbx?url'
-import turretTextureUrl from '../assets/models/turrets/Texture.png'
+import turretModelUrl from '../assets/models/turrets/turret.glb?url'
 import muzzleFlashUrl from '../assets/textures/vfx/muzzle-flash-front.png'
 import explosionSpriteUrl from '../assets/textures/vfx/explosion-1-b-spritesheet.png'
 import playerGunSfxUrl from '../assets/audio/player-gun.wav'
@@ -60,13 +60,11 @@ const buildingModelUrls = {
 export interface GameAssets {
   helicopterTemplate: Group
   fighterJetTemplate: Group
+  turretTemplate: Group
   treeTemplates: Record<string, Group>
   buildingTemplates: Record<string, Group>
   groundTexture: Texture
   staged: {
-    turretBaseUrl: string
-    turretTopUrl: string
-    turretTextureUrl: string
     muzzleFlashUrl: string
     explosionSpriteUrl: string
     playerGunSfxUrl: string
@@ -186,11 +184,118 @@ function centerOnGround(root: Object3D) {
   root.position.y -= min.y
 }
 
+function stylePlayerHelicopter(root: Object3D) {
+  const militaryGreen = 0x4f6548
+  const darkDetail = 0x1d2420
+  const lightDetail = 0xa8b1a0
+  const glass = 0x020405
+
+  forEachMesh(root, (mesh) => {
+    const meshName = mesh.name.toLowerCase()
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+    const styledMaterials = materials.map((current) => {
+      const material =
+        current instanceof MeshStandardMaterial
+          ? current
+          : new MeshStandardMaterial({
+              color: militaryGreen,
+              roughness: 0.7,
+              metalness: 0.1,
+            })
+      const materialName = material.name.toLowerCase()
+
+      if (
+        materialName.includes('transl') ||
+        materialName.includes('glass') ||
+        materialName.includes('window')
+      ) {
+        material.color.setHex(glass)
+        material.transparent = false
+        material.opacity = 1
+        material.roughness = 0.2
+        material.metalness = 0.08
+        material.emissive.setHex(0x000000)
+        material.emissiveIntensity = 0
+      } else if (
+        materialName.includes('black') ||
+        materialName.includes('foregrou') ||
+        meshName.includes('mesh25') ||
+        meshName.includes('mesh26') ||
+        meshName.includes('mesh27') ||
+        meshName.includes('mesh28')
+      ) {
+        material.color.setHex(darkDetail)
+        material.roughness = 0.52
+        material.metalness = 0.22
+      } else if (meshName.includes('mesh188')) {
+        material.color.setHex(lightDetail)
+        material.roughness = 0.58
+        material.metalness = 0.18
+      } else {
+        material.color.setHex(militaryGreen)
+        material.roughness = 0.64
+        material.metalness = 0.12
+      }
+
+      material.needsUpdate = true
+      return material
+    })
+
+    mesh.material = Array.isArray(mesh.material) ? styledMaterials : styledMaterials[0]!
+  })
+}
+
+function optimizeVertexColorModel(root: Group): Group {
+  const geometries: BufferGeometry[] = []
+
+  root.updateMatrixWorld(true)
+  root.traverse((child) => {
+    if (!(child instanceof Mesh)) {
+      return
+    }
+
+    const geometry = child.geometry.clone()
+    const paint = geometry.getAttribute('color_1') ?? geometry.getAttribute('color')
+
+    if (paint) {
+      geometry.setAttribute('color', paint.clone())
+    } else {
+      const color = new Float32Array(geometry.getAttribute('position').count * 3)
+      color.fill(0.45)
+      geometry.setAttribute('color', new Float32BufferAttribute(color, 3))
+    }
+
+    geometry.deleteAttribute('color_1')
+    geometry.deleteAttribute('uv')
+    geometry.applyMatrix4(child.matrixWorld)
+    geometries.push(geometry)
+  })
+
+  const optimized = new Group()
+  const mergedGeometry = mergeGeometries(geometries, false)
+
+  if (!mergedGeometry) {
+    return root
+  }
+
+  const material = new MeshStandardMaterial({
+    color: 0xffffff,
+    roughness: 0.5,
+    metalness: 0,
+    vertexColors: true,
+  })
+  const mesh = new Mesh(mergedGeometry, material)
+  mesh.castShadow = true
+  mesh.receiveShadow = true
+  optimized.add(mesh)
+  return optimized
+}
+
 export async function loadAssets(): Promise<GameAssets> {
-  const [helicopter, fighterJet, helicopterTexture, groundTexture] = await Promise.all([
-    loadFBX(helicopterModelUrl),
+  const [helicopter, fighterJet, turretSource, groundTexture] = await Promise.all([
+    loadGLTFScene(helicopterModelUrl),
     loadOBJ(fighterJetModelUrl),
-    loadTexture(helicopterTextureUrl),
+    loadGLTFScene(turretModelUrl),
     loadTexture(groundTextureUrl),
   ])
   const treeEntries = await Promise.all(
@@ -200,16 +305,9 @@ export async function loadAssets(): Promise<GameAssets> {
     Object.entries(buildingModelUrls).map(async ([key, url]) => [key, await loadFBX(url)] as const),
   )
 
-  helicopterTexture.colorSpace = SRGBColorSpace
   groundTexture.colorSpace = SRGBColorSpace
 
-  forEachMesh(helicopter, (mesh) => {
-    const material = coerceStandardMaterial(mesh)
-    material.map = helicopterTexture
-    material.transparent = true
-    material.alphaTest = 0.2
-    material.needsUpdate = true
-  })
+  stylePlayerHelicopter(helicopter)
   normalizeLongestSide(helicopter, 16)
   centerOnGround(helicopter)
   setShadows(helicopter)
@@ -231,6 +329,11 @@ export async function loadAssets(): Promise<GameAssets> {
   normalizeLongestSide(fighterJet, 23)
   centerOnGround(fighterJet)
   setShadows(fighterJet)
+
+  const turret = optimizeVertexColorModel(turretSource)
+  normalizeLongestSide(turret, 11)
+  centerOnGround(turret)
+  setShadows(turret)
 
   const treeTemplates = Object.fromEntries(treeEntries)
   for (const tree of Object.values(treeTemplates)) {
@@ -267,13 +370,11 @@ export async function loadAssets(): Promise<GameAssets> {
   return {
     helicopterTemplate: helicopter,
     fighterJetTemplate: fighterJet,
+    turretTemplate: turret,
     treeTemplates,
     buildingTemplates,
     groundTexture,
     staged: {
-      turretBaseUrl,
-      turretTopUrl,
-      turretTextureUrl,
       muzzleFlashUrl,
       explosionSpriteUrl,
       playerGunSfxUrl,

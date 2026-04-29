@@ -231,6 +231,24 @@ function setEffectOpacity(root: Object3D, opacity: number, emissiveIntensity: nu
   })
 }
 
+function applyRotorSpin(rotor: Object3D, angle: number) {
+  rotor.rotation.x = Number(rotor.userData.baseRotationX ?? 0)
+  rotor.rotation.y = Number(rotor.userData.baseRotationY ?? 0)
+  rotor.rotation.z = Number(rotor.userData.baseRotationZ ?? 0)
+
+  switch (rotor.userData.spinAxis) {
+    case 'y':
+      rotor.rotation.y += angle
+      break
+    case 'z':
+      rotor.rotation.z += angle
+      break
+    default:
+      rotor.rotation.x += angle
+      break
+  }
+}
+
 export function createRenderer(viewport: HTMLElement): RendererContext {
   const scene = new Scene()
   scene.background = new Color(0xcfe8ff)
@@ -346,12 +364,8 @@ export function createRenderer(viewport: HTMLElement): RendererContext {
         playerView.yawPivot.rotation.y = world.player.facing
         playerView.bodyPivot.rotation.z = world.player.visualRoll
         playerView.bodyPivot.rotation.x = world.player.visualPitch
-        playerView.mainRotor.rotation.x = Number(playerView.mainRotor.userData.baseRotationX ?? 0)
-        playerView.mainRotor.rotation.y = Number(playerView.mainRotor.userData.baseRotationY ?? 0)
-        playerView.mainRotor.rotation.z =
-          Number(playerView.mainRotor.userData.baseRotationZ ?? 0) + world.player.mainRotorAngle
-        playerView.tailRotor.rotation.x =
-          Number(playerView.tailRotor.userData.baseRotationX ?? 0) + world.player.tailRotorAngle
+        applyRotorSpin(playerView.mainRotor, world.player.mainRotorAngle)
+        applyRotorSpin(playerView.tailRotor, world.player.tailRotorAngle)
       }
 
       for (const prop of world.props) {

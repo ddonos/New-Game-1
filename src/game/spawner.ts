@@ -279,7 +279,15 @@ function createParkedAircraft(template?: Group) {
   return root
 }
 
-function createRocketLauncher() {
+function createRocketLauncher(template?: Group) {
+  if (template) {
+    const root = new Group()
+    const model = cloneTemplate(template)
+    model.rotation.y = Math.PI / 2
+    root.add(model)
+    return root
+  }
+
   const root = new Group()
   addBox(root, [6.5, 1.1, 4.4], 0x2f3b34, [0, 0.55, 0], 0, 0.8)
   addBox(root, [4.8, 1, 2.8], 0x4d5b50, [0, 1.45, 0.1], 0, 0.72)
@@ -509,7 +517,7 @@ export class Spawner {
         muzzleOffset: 5.2,
         muzzleAltitude: 4.7,
       })
-      const root = createRocketLauncher()
+      const root = createRocketLauncher(this.assets.turretTemplate)
       root.position.set(position.x, 0, position.y)
       root.rotation.y = rotation + Math.PI / 2
       this.scene.add(root)
